@@ -100,7 +100,7 @@ class OpenAiHelper:
                     }
                 ]
         return openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4.1-nano",
             user=user,
             messages=message,
             **kwargs
