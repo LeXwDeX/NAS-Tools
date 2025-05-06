@@ -24,6 +24,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: docker
+          file: docker/Dockerfile
           push: true
           tags: sunsan05/nas-tools:latest
