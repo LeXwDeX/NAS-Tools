@@ -74,19 +74,39 @@ class EpisodeFormat(object):
         return s + self.__offset if s is not None else None, e + self.__offset if e is not None else None, self.part
 
     def __handle_single(self, file: str):
+        """
+        解析文件名中的集数信息。
+        1. 优先用 parse.parse(self._format, file) 匹配，若未匹配或无 key，则兜底尝试 1x100 格式。
+        2. 若 parse 匹配到 episodes，但不符合原有正则，再兜底尝试 1x100 格式。
+        3. episodes 拆分后返回集数。
+        :param file: 文件名字符串
+        :return: (主集数, 副集数/None)
+        """
         if not self._format:
             return None, None
         ret = parse.parse(self._format, file)
         if not ret or not ret.__contains__(self._key):
+            # 兜底匹配 1x100 这种格式（如 1x100/2x05）
+            match = re.search(r"(\d{1,2})x(\d{1,4})", file, re.IGNORECASE)
+            if match:
+                season = int(match.group(1))
+                episode = int(match.group(2))
+                return season, episode
             return None, None
         episodes = ret.__getitem__(self._key)
         if not re.compile(r"^(EP)?(\d{1,4})(-(EP)?(\d{1,4}))?$", re.IGNORECASE).match(episodes):
+            # 兜底匹配 1x100 这种格式
+            match = re.search(r"(\d{1,2})x(\d{1,4})", file, re.IGNORECASE)
+            if match:
+                season = int(match.group(1))
+                episode = int(match.group(2))
+                return season, episode
             return None, None
-        episode_splits = list(filter(lambda x: re.compile(r'[a-zA-Z]*\d{1,4}', re.IGNORECASE).match(x),
-                                     re.split(r'%s' % SPLIT_CHARS, episodes)))
+        episode_splits = list(filter(lambda x: re.compile(r'[a-zA-Z]*\d{1,4}', re.IGNORECASE).match(x), re.split(r'%s' % SPLIT_CHARS, episodes)))
         if len(episode_splits) == 1:
             return int(re.compile(r'[a-zA-Z]*', re.IGNORECASE).sub("", episode_splits[0])), None
         else:
             return int(re.compile(r'[a-zA-Z]*', re.IGNORECASE).sub("", episode_splits[0])), int(
                 re.compile(r'[a-zA-Z]*', re.IGNORECASE).sub("", episode_splits[1]))
+        
 
